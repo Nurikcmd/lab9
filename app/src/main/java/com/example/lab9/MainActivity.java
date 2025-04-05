@@ -36,7 +36,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClick(View view) {
-
+        if (view.getId() == R.id.button_start) {
+            startService(serviceIntent);
+        } else if (view.getId() == R.id.button_end) {
+            stopService(serviceIntent);
+            randomCharacterEditText.setText("");
+        }
     }
 
     @Override
