@@ -1,12 +1,7 @@
 package com.example.lab9;
 
 import android.os.Bundle;
-
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -38,20 +33,16 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
         
         randomCharacterEditText = findViewById(R.id.editText_randomCharacter);
         statusTextView = findViewById(R.id.textView_status);
         startButton = findViewById(R.id.button_start);
         stopButton = findViewById(R.id.button_end);
+        
         broadcastReceiver = new MyBroadcastReceiver();
         serviceIntent = new Intent(getApplicationContext(), RandomCharacterService.class);
+        
         fadeInAnimation = AnimationUtils.loadAnimation(this, R.anim.fade_in);
         buttonAnimation = AnimationUtils.loadAnimation(this, R.anim.button_press);
         
