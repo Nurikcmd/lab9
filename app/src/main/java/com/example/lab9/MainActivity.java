@@ -13,9 +13,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
+import android.graphics.Color;
 
 public class MainActivity extends AppCompatActivity {
     private EditText randomCharacterEditText;
+    private TextView statusTextView;
     private BroadcastReceiver broadcastReceiver;
     private Intent serviceIntent;
     private boolean isServiceRunning = false;
@@ -34,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         });
         
         randomCharacterEditText = findViewById(R.id.editText_randomCharacter);
+        statusTextView = findViewById(R.id.textView_status);
         broadcastReceiver = new MyBroadcastReceiver();
         serviceIntent = new Intent(getApplicationContext(), RandomCharacterService.class);
 
@@ -45,7 +49,18 @@ public class MainActivity extends AppCompatActivity {
             }
             if (isServiceRunning) {
                 startService(serviceIntent);
+                updateStatusView(true);
             }
+        }
+    }
+
+    private void updateStatusView(boolean isRunning) {
+        if (isRunning) {
+            statusTextView.setText("Статус: работает");
+            statusTextView.setTextColor(Color.parseColor("#4CAF50"));
+        } else {
+            statusTextView.setText("Статус: остановлен");
+            statusTextView.setTextColor(Color.parseColor("#F44336"));
         }
     }
 
@@ -60,10 +75,12 @@ public class MainActivity extends AppCompatActivity {
         if (view.getId() == R.id.button_start) {
             startService(serviceIntent);
             isServiceRunning = true;
+            updateStatusView(true);
         } else if (view.getId() == R.id.button_end) {
             stopService(serviceIntent);
             randomCharacterEditText.setText("");
             isServiceRunning = false;
+            updateStatusView(false);
         }
     }
 
@@ -73,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("my.custom.action.tag.lab9");
         registerReceiver(broadcastReceiver, intentFilter);
+        updateStatusView(isServiceRunning);
     }
 
     @Override

@@ -9,17 +9,29 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text=""
+        android:text="Генератор случайных букв"
         android:textSize="24sp"
+        android:textStyle="bold"
         android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:id="@+id/textView_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Статус: остановлен"
+        android:textSize="16sp"
+        android:textColor="#FF0000"
+        android:layout_marginBottom="32dp"/>
 
     <EditText
         android:id="@+id/editText_randomCharacter"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
         android:enabled="false"
         android:gravity="center"
         android:textSize="48sp"
+        android:background="@android:color/darker_gray"
+        android:textColor="@android:color/white"
         android:layout_marginBottom="32dp"/>
 
     <LinearLayout
@@ -34,14 +46,16 @@
             android:layout_height="wrap_content"
             android:text="СТАРТ"
             android:onClick="onClick"
-            android:layout_marginEnd="16dp"/>
+            android:layout_marginEnd="16dp"
+            android:backgroundTint="#4CAF50"/>
 
         <Button
             android:id="@+id/button_end"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="СТОП"
-            android:onClick="onClick"/>
+            android:onClick="onClick"
+            android:backgroundTint="#F44336"/>
 
     </LinearLayout>
 
