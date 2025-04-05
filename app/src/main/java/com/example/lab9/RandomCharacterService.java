@@ -11,27 +11,42 @@ import java.util.Random;
 public class RandomCharacterService extends Service {
     private boolean isRandomGeneratorOn;
     private final String TAG = "RandomCharacterService";
+    private Thread workerThread;
     
     char[] alphabet = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".toCharArray();
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+        Log.d(TAG, "Сервис создан");
+    }
+
+    @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Toast.makeText(getApplicationContext(), "Сервис запущен", Toast.LENGTH_SHORT).show();
-        Log.i(TAG, "Сервис запущен...");
-        Log.i(TAG, "ID потока в onStartCommand: " + Thread.currentThread().getId());
-        isRandomGeneratorOn = true;
+        try {
+            Toast.makeText(getApplicationContext(), "Сервис запущен", Toast.LENGTH_SHORT).show();
+            Log.i(TAG, "Сервис запущен...");
+            Log.i(TAG, "ID потока в onStartCommand: " + Thread.currentThread().getId());
+            isRandomGeneratorOn = true;
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                startRandomGenerator();
-            }
-        }).start();
+            workerThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    startRandomGenerator();
+                }
+            });
+            workerThread.start();
 
-        return START_STICKY;
+            return START_STICKY;
+        } catch (Exception e) {
+            Log.e(TAG, "Ошибка при запуске сервиса", e);
+            stopSelf();
+            return START_NOT_STICKY;
+        }
     }
 
     private void startRandomGenerator() {
+        Log.d(TAG, "Генератор случайных букв запущен");
         while(isRandomGeneratorOn) {
             try {
                 Thread.sleep(1000);
@@ -48,21 +63,33 @@ public class RandomCharacterService extends Service {
                     sendBroadcast(broadcastIntent);
                 }
             } catch (InterruptedException e) {
-                Log.i(TAG, "Поток прерван.");
+                Log.w(TAG, "Поток прерван", e);
+                break;
+            } catch (Exception e) {
+                Log.e(TAG, "Ошибка при генерации случайной буквы", e);
             }
         }
+        Log.d(TAG, "Генератор случайных букв остановлен");
     }
 
     private void stopRandomGenerator() {
+        Log.d(TAG, "Остановка генератора случайных букв");
         isRandomGeneratorOn = false;
+        if (workerThread != null) {
+            workerThread.interrupt();
+        }
     }
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
-        stopRandomGenerator();
-        Toast.makeText(getApplicationContext(), "Сервис остановлен", Toast.LENGTH_SHORT).show();
-        Log.i(TAG, "Сервис уничтожен...");
+        try {
+            super.onDestroy();
+            stopRandomGenerator();
+            Toast.makeText(getApplicationContext(), "Сервис остановлен", Toast.LENGTH_SHORT).show();
+            Log.i(TAG, "Сервис уничтожен...");
+        } catch (Exception e) {
+            Log.e(TAG, "Ошибка при остановке сервиса", e);
+        }
     }
 
     @Nullable
