@@ -12,6 +12,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.graphics.Color;
@@ -24,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isServiceRunning = false;
     private static final String KEY_IS_SERVICE_RUNNING = "is_service_running";
     private static final String KEY_LAST_CHARACTER = "last_character";
+    private Animation fadeInAnimation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
         statusTextView = findViewById(R.id.textView_status);
         broadcastReceiver = new MyBroadcastReceiver();
         serviceIntent = new Intent(getApplicationContext(), RandomCharacterService.class);
+        fadeInAnimation = AnimationUtils.loadAnimation(this, R.anim.fade_in);
 
         if (savedInstanceState != null) {
             isServiceRunning = savedInstanceState.getBoolean(KEY_IS_SERVICE_RUNNING, false);
@@ -62,6 +66,11 @@ public class MainActivity extends AppCompatActivity {
             statusTextView.setText("Статус: остановлен");
             statusTextView.setTextColor(Color.parseColor("#F44336"));
         }
+    }
+
+    private void updateCharacterWithAnimation(String character) {
+        randomCharacterEditText.setText(character);
+        randomCharacterEditText.startAnimation(fadeInAnimation);
     }
 
     @Override
@@ -104,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             try {
                 char data = intent.getCharExtra("randomCharacter", '?');
-                randomCharacterEditText.setText(String.valueOf(data));
+                updateCharacterWithAnimation(String.valueOf(data));
             } catch (Exception e) {
                 e.printStackTrace();
             }
