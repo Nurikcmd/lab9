@@ -18,6 +18,9 @@ public class MainActivity extends AppCompatActivity {
     private EditText randomCharacterEditText;
     private BroadcastReceiver broadcastReceiver;
     private Intent serviceIntent;
+    private boolean isServiceRunning = false;
+    private static final String KEY_IS_SERVICE_RUNNING = "is_service_running";
+    private static final String KEY_LAST_CHARACTER = "last_character";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,14 +36,34 @@ public class MainActivity extends AppCompatActivity {
         randomCharacterEditText = findViewById(R.id.editText_randomCharacter);
         broadcastReceiver = new MyBroadcastReceiver();
         serviceIntent = new Intent(getApplicationContext(), RandomCharacterService.class);
+
+        if (savedInstanceState != null) {
+            isServiceRunning = savedInstanceState.getBoolean(KEY_IS_SERVICE_RUNNING, false);
+            String lastChar = savedInstanceState.getString(KEY_LAST_CHARACTER, "");
+            if (!lastChar.isEmpty()) {
+                randomCharacterEditText.setText(lastChar);
+            }
+            if (isServiceRunning) {
+                startService(serviceIntent);
+            }
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(KEY_IS_SERVICE_RUNNING, isServiceRunning);
+        outState.putString(KEY_LAST_CHARACTER, randomCharacterEditText.getText().toString());
     }
 
     public void onClick(View view) {
         if (view.getId() == R.id.button_start) {
             startService(serviceIntent);
+            isServiceRunning = true;
         } else if (view.getId() == R.id.button_end) {
             stopService(serviceIntent);
             randomCharacterEditText.setText("");
+            isServiceRunning = false;
         }
     }
 
