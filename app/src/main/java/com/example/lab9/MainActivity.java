@@ -10,14 +10,17 @@ import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class MainActivity extends AppCompatActivity {
-    private EditText randomCharacterEditText;
+    private static final String TAG = "MainActivity";
+    
+    private TextView randomCharacterTextView;
     private TextView statusTextView;
     private Button startButton;
     private Button stopButton;
@@ -28,20 +31,20 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_LAST_CHARACTER = "last_character";
     private Animation fadeInAnimation;
     private Animation buttonAnimation;
-    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         
-        randomCharacterEditText = findViewById(R.id.editText_randomCharacter);
+        randomCharacterTextView = findViewById(R.id.editText_randomCharacter);
         statusTextView = findViewById(R.id.textView_status);
         startButton = findViewById(R.id.button_start);
         stopButton = findViewById(R.id.button_end);
         
         broadcastReceiver = new MyBroadcastReceiver();
-        serviceIntent = new Intent(getApplicationContext(), RandomCharacterService.class);
+        serviceIntent = new Intent(this, RandomCharacterService.class);
         
         fadeInAnimation = AnimationUtils.loadAnimation(this, R.anim.fade_in);
         buttonAnimation = AnimationUtils.loadAnimation(this, R.anim.button_press);
@@ -52,13 +55,17 @@ public class MainActivity extends AppCompatActivity {
             isServiceRunning = savedInstanceState.getBoolean(KEY_IS_SERVICE_RUNNING, false);
             String lastChar = savedInstanceState.getString(KEY_LAST_CHARACTER, "");
             if (!lastChar.isEmpty()) {
-                randomCharacterEditText.setText(lastChar);
+                randomCharacterTextView.setText(lastChar);
             }
             if (isServiceRunning) {
                 startService(serviceIntent);
                 updateStatusView(true);
             }
         }
+        
+        // Установим начальный текст
+        randomCharacterTextView.setText("?");
+        stopButton.setEnabled(false);
     }
 
     private void setupButtonAnimations() {
@@ -68,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onAnimationEnd(Animation animation) {
-                handler.postDelayed(() -> {
+                mainHandler.postDelayed(() -> {
                     startButton.clearAnimation();
                     stopButton.clearAnimation();
                 }, 50);
@@ -80,41 +87,50 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateStatusView(boolean isRunning) {
-        if (isRunning) {
-            statusTextView.setText("Статус: работает");
-            statusTextView.setTextColor(Color.parseColor("#4CAF50"));
-            startButton.setEnabled(false);
-            stopButton.setEnabled(true);
-        } else {
-            statusTextView.setText("Статус: остановлен");
-            statusTextView.setTextColor(Color.parseColor("#F44336"));
-            startButton.setEnabled(true);
-            stopButton.setEnabled(false);
-        }
+        mainHandler.post(() -> {
+            if (isRunning) {
+                statusTextView.setText("Статус: работает");
+                statusTextView.setTextColor(Color.parseColor("#4CAF50"));
+                startButton.setEnabled(false);
+                stopButton.setEnabled(true);
+            } else {
+                statusTextView.setText("Статус: остановлен");
+                statusTextView.setTextColor(Color.parseColor("#F44336"));
+                startButton.setEnabled(true);
+                stopButton.setEnabled(false);
+            }
+        });
     }
 
-    private void updateCharacterWithAnimation(String character) {
-        randomCharacterEditText.setText(character);
-        randomCharacterEditText.startAnimation(fadeInAnimation);
+    private void updateCharacterWithAnimation(final String character) {
+        Log.d(TAG, "Обновление символа: " + character);
+        mainHandler.post(() -> {
+            Log.d(TAG, "Установка текста в UI");
+            randomCharacterTextView.setText(character);
+            randomCharacterTextView.startAnimation(fadeInAnimation);
+            Log.d(TAG, "Текст после обновления: " + randomCharacterTextView.getText());
+        });
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(KEY_IS_SERVICE_RUNNING, isServiceRunning);
-        outState.putString(KEY_LAST_CHARACTER, randomCharacterEditText.getText().toString());
+        outState.putString(KEY_LAST_CHARACTER, randomCharacterTextView.getText().toString());
     }
 
     public void onClick(View view) {
         view.startAnimation(buttonAnimation);
         
         if (view.getId() == R.id.button_start) {
+            Log.d(TAG, "Нажата кнопка СТАРТ");
             startService(serviceIntent);
             isServiceRunning = true;
             updateStatusView(true);
         } else if (view.getId() == R.id.button_end) {
+            Log.d(TAG, "Нажата кнопка СТОП");
             stopService(serviceIntent);
-            randomCharacterEditText.setText("");
+            randomCharacterTextView.setText("?");
             isServiceRunning = false;
             updateStatusView(false);
         }
@@ -123,25 +139,31 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction("my.custom.action.tag.lab9");
-        registerReceiver(broadcastReceiver, intentFilter);
+        IntentFilter intentFilter = new IntentFilter(RandomCharacterService.BROADCAST_ACTION);
+        LocalBroadcastManager.getInstance(this)
+            .registerReceiver(broadcastReceiver, intentFilter);
         updateStatusView(isServiceRunning);
+        Log.d(TAG, "BroadcastReceiver зарегистрирован");
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        unregisterReceiver(broadcastReceiver);
+        LocalBroadcastManager.getInstance(this)
+            .unregisterReceiver(broadcastReceiver);
+        Log.d(TAG, "BroadcastReceiver отменен");
     }
 
     class MyBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
             try {
-                char data = intent.getCharExtra("randomCharacter", '?');
+                Log.d(TAG, "Получен broadcast");
+                char data = intent.getCharExtra(RandomCharacterService.EXTRA_CHAR, '?');
+                Log.d(TAG, "Полученный символ: " + data);
                 updateCharacterWithAnimation(String.valueOf(data));
             } catch (Exception e) {
+                Log.e(TAG, "Ошибка в onReceive", e);
                 e.printStackTrace();
             }
         }
